@@ -1,5 +1,7 @@
 # Applied Genetics Analysis
 
+#Working in a lunix/unix environment, I completed the following assignemtns and trainings on BU's Shared Computing Cloud. 
+
 #In this course, I will advance my statistical knowledge in statistical genetics analysis skills in the following topics:
 
 #Introduction to the SCC and linux
@@ -29,3 +31,4 @@
 #Analysis of DNA methylation data 
 
 #Final project presentation
+
