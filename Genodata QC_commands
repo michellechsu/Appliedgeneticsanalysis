@@ -1,0 +1,103 @@
+#Use the TGEN Alzheimer data located in  
+#/projectnb/bs859/data/tgen   
+#working directory /project/bs859/spr19/users/mchsu/class2
+#The files are:  TGEN.bim, TGEN.fam, TGEN.bed.   
+
+
+#set path to class data.  Now we can use $DATADIR to refer to the longer directory name: 
+
+DATADIR=/projectnb/bs859/data/tgen
+
+#In this homework:
+#Remember to add 
+#--allow-no-sex
+#--exclude SNP_List.txt
+#header - 1 
+
+
+#1
+# How many lines are there in the fam file?  #lines/words/characters 
+# *.fam is the pedigree file, so the number of lines==the number of individuals in the file)
+
+wc $DATADIR/TGEN.fam  
+
+# How many lines are there in the bim file? #lines/words/characters 
+# *.bim is the map pedigreefile, so the number of lines==the number of genetic variants in the data set
+
+wc $DATADIR/TGEN.bim 
+
+#2 
+
+module load plink  
+
+##run some plink analyses. 
+
+##compute the allele frequencies MAF , and save them to a file freq1.frq 
+#plink --allow-no-sex --bfile $DATADIR/TGEN --freq --out freq1   
+##compute the missing rates for individuals and variants, and save them to files:     miss1.imiss     miss1.lmiss 
+#plink --allow-no-sex --bfile $DATADIR/TGEN --missing  --out miss1   
+##compute a hardy-weinberg test for each variant, and save the results to a file  hwe1.hwe
+#plink --allow-no-sex --bfile $DATADIR/TGEN --hardy  --out hwe1
+
+#wc freq1.frq 
+#wc miss1.imiss   #individual missing rates
+#wc miss1.lmiss   #variant missing rates
+#wc hwe1.hwe
+#head freq1.frq
+#head miss1.imiss
+#head miss1.lmiss
+#head hwe1.hwe
+
+plink --allow-no-sex --bfile $DATADIR/TGEN --maf 0.01 --geno 0.05 --mind 0.05 --hwe 1e-6 --make-bed --out filter
+
+# second filtered data set
+#first remove SNPs with MAF<0.01 
+#missing rate>0.05 
+#HWE p<0.000001
+#remove individuals with >5% missing genotypes.  
+#3
+plink --allow-no-sex --bfile $DATADIR/TGEN --maf 0.01 --make-bed --out filter1
+plink --allow-no-sex --bfile filter1 --geno 0.05 --make-bed --out filter2
+plink --allow-no-sex --bfile filter2 --hwe 1e-6 --make-bed --out filter3
+plink --allow-no-sex --bfile filter3  --mind 0.05 --make-bed --out filter4
+
+#5
+plink --allow-no-sex --bfile filter4 --test-missing --out cctest  
+#wc cctest.missing
+#head  cctest.missing
+
+awk 'NR==1||($5 < 0.0001) {print $0}' cctest.missing > cctest0001.missing
+wc cctest0001.missing
+#head cctest0001.missing
+
+plink --allow-no-sex --bfile filter4 --test-mishap --out genotest  # creates genotest.missing.hap
+head  genotest.missing.hap
+wc genotest.missing.hap
+
+plink --allow-no-sex --bfile filter4 --het --out Fstat  
+
+R --vanilla<Fstat.R>Fstat.log
+
+#6
+##ld prune
+plink --allow-no-sex --bfile filter4 --indep-pairwise 10000kb  5000kb  0.1      #pruning for plink use assuming only low ld markers used
+
+#67139 in the prune out
+
+plink --allow-no-sex --bfile filter4 --exclude plink.prune.out --genome --out ibd #--genome invokes an IBS/IBD computation, and then writes a report that has phat
+wc ibd.genome
+head ibd.genome
+##ibd file available
+
+awk '$10>0.25{print $0}' ibd.genome > ibd.gt25.genome
+awk '$10>0.95{print $0}' ibd.genome > ibd.gt95.genome
+wc ibd.gt25.genome
+wc ibd.gt95.genome
+
+plink --allow-no-sex --bfile filter4 --exclude plink.prune.out --remove ibd.gt25.text --genome --make-bed --out ibd_final
+
+#7 
+#new fam data 
+
+plink --allow-no-sex --bfile ibd_final --het --out Fstat_final  
+R --vanilla<Fstat_final.R>Fstat_final.log
