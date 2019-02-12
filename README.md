@@ -1,4 +1,5 @@
-# Appliedgeneticsanalysis
+# Applied Genetics Analysis
+
 #In this course, I will advance my statistical knowledge in statistical genetics analysis skills in the following topics:
 
 #Introduction to the SCC and linux
