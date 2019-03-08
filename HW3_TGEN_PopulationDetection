@@ -1,0 +1,67 @@
+#QUESTION 1
+
+awk '($3>0.01||$2<-0.01)&&($12=="Case"||$12=="Control"){print $0}' merge5.evec> outliers.txt
+cat outliers.txt
+
+
+#QUESTION 2
+
+cat outliers.txt
+
+#QUESTION 3
+
+DATADIR=/project/bs859/spr19/users/mchsu/class3/
+module load plink
+plink --bfile $DATADIR/TGEN_cleaned --geno 0.02 --chr 1-22 --make-bed --out TGEN_cleaned1
+#Now, we prune:  
+#r2>0.2 in each 
+#window of 1000kb across the genome, and removes one of each pair.  
+#It moves 10 SNPs and does the same pair-wise pruning.
+plink --bfile TGEN_cleaned1 --indep-pairwise 1000 kb 10 0.2 --out prune0.2
+plink --bfile TGEN_cleaned1 --extract prune0.2.prune.in --make-bed --out TGEN_cleaned1a
+
+
+#QUESTION 3 B
+#qsub -P bs859 script3.qsub#### modified - dif iterations and eivecnumbers 10###
+cat test3.par 
+module load EIGENSOFT
+smartpca -p test3.par > monday.out 
+
+##QUESTION 3 c
+##look at the output logfile 
+cat test3.out
+less hw_3_2.evec
+
+##QUESTION 3 e, f, g
+less test3.out
+cat outliers_2.removed
+grep WGAAD_270: outliers_2.removed
+grep WGACON_66: outliers_2.removed
+grep NBB_S96149:outliers_2.removed
+grep WGAAD_339:WGAAD_339 outliers_2.removed
+grep WGAAD_408:WGAAD_408 outliers_2.removed
+grep WGACON_194:WGACON_194  outliers_2.removed 
+
+## Plot the first first two PCs (-c 1:2) with different colors/shapes for the 2 different phenotypes(-p Case:Control)
+## create a plot in pdf format (-x) and use the filename "tgenhw3" (-o tgenhw3.xtxt)
+
+ploteig -i hw_3_2.evec -c 1:2 -p Case:Control -x  -o tgenhw3_pc12.xtxt
+ploteig -i hw_3_2.evec -c 1:2 -p Control:Case -x  -o tgenhw3_pc12.xtxt
+
+ploteig -i hw_3_2.evec -c 7:4 -p Case:Control -x  -o tgenhw3_pc74.xtxt
+ploteig -i hw_3_2.evec -c 7:4 -p Control:Case -x  -o tgenhw3_pc74.xtxt
+
+#i
+wc outliers_2.removed 
+cat outliers_2.removed 
+
+#j
+
+cat test4.par
+module load EIGENSOFT
+smartpca -p test4.par > monday_10.out
+cat monday_10.out
+wc outliers_3.removed
+
+
+
