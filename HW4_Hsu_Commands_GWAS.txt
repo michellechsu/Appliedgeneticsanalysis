@@ -1,0 +1,107 @@
+
+DATADIR=/projectnb/bs859/data/tgen/cleaned/
+module load plink
+
+#pc files
+head $DATADIR/pc_withheader.txt 
+head $DATADIR/TGEN_pcs.txt 
+#Q1
+plink   --bfile $DATADIR/TGEN_cleaned --allow-no-sex --covar $DATADIR/pc_withheader.txt --covar-name PC1 PC2 PC3 PC4 PC5 PC6 PC7 PC8 PC9 PC10 --logistic no-snp  --ci .95 --chr 1-22 --out pc_1to10
+cat pc_1to10.assoc.logistic
+
+#2
+plink   --bfile $DATADIR/TGEN_cleaned --allow-no-sex --covar $DATADIR/pc_withheader.txt --covar-name PC2 PC4 PC5 PC7 --logistic beta hide-covar --ci .95 --chr 1-22 --out q2
+# written to q2.assoc.logistic 
+
+head -6 q2.assoc.logistic
+
+
+plink   --bfile $DATADIR/TGEN_cleaned --allow-no-sex --covar $DATADIR/pc_withheader.txt --covar-name PC2 PC4 PC5 PC7 --logistic beta hide-covar --ci .95 --chr 1-22 --pfilter 0.0001 --out q2_p
+#written to q2_p.assoc.logistic
+
+cat q2_p.assoc.logistic
+wc q2_p.assoc.logistic
+
+
+#3 
+#--chr 1-22
+##prune to remove variants in high LD:
+plink --bfile $DATADIR/TGEN_cleaned  --chr 1-22 --indep-pairwise 10000kb  5000kb  0.1 
+
+plink --bfile $DATADIR/TGEN_cleaned --exclude plink.prune.out --genome --out ibd_hw4 
+wc ibd_hw4.genome
+head ibd_hw4.genome
+
+
+##GM MAT  
+#create a genetic matrix 
+#make-rel square 
+##This command makes a genetic relationship matrix, rather than printing out hte pairwise information 
+## in the previous command:
+plink --bfile $DATADIR/TGEN_cleaned --exclude plink.prune.out --make-rel square --out grm_hw4
+#
+#creates 2 files: 
+# grm_hw4.rel.id -- the order of the ids for the GRM file
+
+head grm_hw4.rel.id
+
+# grm.rel -- the actual genetic relationship matrix.  For our data, with 89 individuals, 
+# it is an 89x89  matrix.  Let's look at the first 5 individuals submatrix:
+#awk '{print $1, $2, $3, $4, $5, $6, $7, $8, $9, $10}'  grm_hw4.rel | head -n 10 #diagnoal ~ 1 # relationship with people (zero in the ibd table - the matrix doesnot have the constrant)
+
+
+
+
+#load the most up to date version of R and gcc (needed to run GMMAT package in R)
+module load R 
+module load gcc
+cat testGMMAT.log
+gedit testGMMAT.R
+#saved to testGMMAT_hw4.R
+
+R --vanilla <testGMMAT_hw4.R>testGMMAT_hw4.log
+
+
+##output has weird format.  There is a ^M on each line that causes problems when looking at 
+## the file.  let's try reformatting so it is more readable
+##to do that, you will need to type the following command, not cut and paste it.
+##to get the ^M, you need to hold down the control key and then type "vm"
+ 
+sed -i  's/^M//g' testhw4.glmm.score.nocov 
+sed -i  's/^M//g' testhw4.glmm.score.PCcov 
+#in logistic mix model - instead of beta - we do score test  - gives sign of the effect - 
+
+
+#these awk commands replace the "PVAL" column header with "P", and the "POS" with "BP" . 
+#This will make it match the P-value and base pair column headers from PLINK output.
+##this will be useful when we use the R program qqplot.R to do a qqplot and manhattan plot 
+##of the p-values
+awk 'NR==1{$4="BP";$11="P"};{print $0}' testhw4.glmm.score.nocov>hw4glmm.score.nocov.txt #might not work - change column name to match 
+awk 'NR==1{$4="BP";$11="P"};{print $0}' testhw4.glmm.score.PCcov>hw4glmm.score.PCcov.txt #might not work 
+
+
+##Let's compare the effect estimates for one of the most associated variants:   rs41377151   
+
+
+awk '(NR==1||($2=="rs41377151")){print $0}' hw4glmm.score.nocov.txt
+awk '(NR==1||($2=="rs41377151")){print $0}' hw4glmm.score.PCcov.txt
+
+
+#QQplots
+
+R --vanilla --args q2.assoc.logistic "Logistic_pcadjusted" ADD < qqplot.R > logisticqqplot_adj.out
+R --vanilla --args hw4glmm.score.nocov.txt "glmm nocovariates" <qqplot.R>qq_glmmnocov.log  
+R --vanilla --args hw4glmm.score.PCcov.txt "glmm PCcovariates" <qqplot.R>qq_glmmPCcov.log   #best 
+
+
+###a few alternative tools for making qq plots:
+# grid 
+#R --vanilla --args logistnoadj.assoc.logistic noadj ADD <qq_umich_gc.R>qq_noadj_umich.log
+#R --vanilla --args logistadjpop-hidecov.assoc.logistic popadj ADD <qq_umich_gc.R>qq_popadj_umich.log
+#R --vanilla --args glmm.score.nocov.txt glmmnocov  <qq_umich_gc.R>qq_glm.nocov.log
+#R --vanilla --args glmm.score.PC1PC2cov.txt glmmPC1PC2cov  <qq_umich_gc.R>qq_glm.PC1PC2cov.log
+
+
+##Manhattan plots
+
+R --vanilla --args hw4glmm.score.PCcov.txt "GLMM adjusted analysis" GLMM_PCcovmanhattan < gwaplot.R  >glmm_gwa2.log
