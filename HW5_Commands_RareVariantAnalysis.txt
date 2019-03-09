@@ -1,0 +1,139 @@
+cd /projectnb/bs859/spr19/users/mchsu/class5
+module load R epacts tabix vcftools
+DATADIR="/projectnb/bs859/data/rarevariant/hw"
+
+
+#Q1 USE example.vcf
+
+#individuals (total of columns after FORMAT in the vcf file)
+cat $DATADIR/example.vcf
+
+#Q2 USE homework.ped and 1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz
+
+head $DATADIR/homework.ped
+wc $DATADIR/homework.ped
+cat $DATADIR/homework.ped
+
+#Q3 
+
+#run single variant association test using the quantitative trait QPHENO in the pedigree file, 
+#adjusting for age and POP (of three) using a score test.  
+#chromosome 20
+
+epacts single   --vcf "/projectnb/bs859/data/rarevariant/1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz"   --ped $DATADIR/homework.ped   --min-callrate 0.97 --min-maf 0.01  --chr 20 --pheno QPHENO --cov pop.EU pop.AF pop.HI --test q.lm --anno   --out out/single.wald --run 2  > epacts.single.wald
+
+
+#single.epacts.gz tells you number of SNPs (but also includes missing p val)
+
+##creates many files.  Test statistic results are in out/single.lrt.epacts.gz and out/single.firth.epacts.gz:
+zcat out/single.wald.epacts.gz|head  #first 10 snps
+zcat out/single.wald.epacts.gz|wc    #number of lines in file (number of variants) = 19102 -1 
+
+head "/projectnb/bs859/spr19/users/mchsu/class5/out/single.wald.epacts.top5000"     
+     
+#UPZIP 
+     
+gunzip *.gz
+head single.wald.epacts.top5000
+cd ..
+
+
+## all the variants on chrom 20 are in the output file,
+## but the ones with MAF<0.01 have NA for p-value because of the filter we set in our command:
+zcat out/single.wald.epacts.gz | awk '{print $8, $9}' |more
+
+
+#Q4 PREP
+#BEFORE I RAN THE ANALYSIS: 
+
+##create group file
+# lists the potentially functional variants for each gene, to be used in the grouped association tests:
+
+# epacts make-group -man   ## manual pages
+# create groupings using only nonsynonymous snps that passed the filter in the vcf file
+ epacts make-group --vcf "/projectnb/bs859/data/rarevariant/1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz" 
+--format epacts --pass --nonsyn --out nonsyn
+
+
+#this is a group file now
+
+#Q4 SKAT TEST 
+# quantitative trait. 
+#Adjusted for sex and population
+## limit to potentially functional SNPs (nonsyn) with maximum MAF 0.05 
+
+epacts group --vcf "/projectnb/bs859/data/rarevariant/1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz"\
+  --groupf nonsyn  --out out/quant.gene.maf05.plainskat \
+  --ped $DATADIR/homework.ped --max-maf 0.05 \
+  --pheno QPHENO --cov pop.EU pop.AF pop.HI --test skat  --run 4
+
+#exclude greater than 0.05 
+mv nonsyn ..
+
+#number of tests done (+1 for header)
+wc out/quant.gene.maf05.plainskat.epacts
+
+#the 10th coluymn is the pvalue
+#print if not NA
+#number of tests with non NA p-value 
+
+awk '$10!="NA"{print $0}' out/quant.gene.maf05.plainskat.epacts |wc #489
+
+#number of tests with MAC>5 and non-NA p-value:
+#column 5 how many variance there are - we want greater than 5
+#awk 'NR==1||($8>5&&$10!="NA"){print $0}' out/quant.gene.maf05.plainskat.epacts |wc #364 
+
+
+#number of tests with p<0.01 and MAC>5:
+#column 10 less than 0.01 while also keeping MAF > 0.05
+
+awk 'NR==1||($8>5&&$10<0.01){print $0}' out/quant.gene.maf05.plainskat.epacts
+
+awk 'NR==1||($8>5&&$10<0.01){print $0}' out/quant.gene.maf05.plainskat.epacts|wc
+
+#############SKAT o###############################################################
+##skat -o for the quantitative trait.  Adjusted for sex and population 
+## limit to potentially functional SNPs (nonsyn) with maximum MAF 0.05 
+
+
+#############DIFFERENT GROUPINGS - LOST OF FUNCTION VARIANTS ONLY
+epacts group --vcf "/projectnb/bs859/data/rarevariant/1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz"\
+  --groupf nonsyn  --out out/quant.gene.maf05.skat \
+  --ped $DATADIR/homework.ped --max-maf 0.05 \
+  --pheno QPHENO --cov pop.EU pop.AF pop.HI --test skat --skat-o --run 4
+
+#number of tests done (+1 for header)
+#wc out/quant.gene.maf05.skat.epacts
+#number of tests with non NA p-value 
+#awk '$10!="NA"{print $0}' out/quant.gene.maf05.skat.epacts |wc
+#number of tests with MAC>5 and non-NA p-value:
+awk 'NR==1||($8>5&&$10!="NA"){print $0}' out/quant.gene.maf05.skat.epacts |wc #tests performed - adjust 
+#number of tests with p<0.01 and MAC>5:
+awk 'NR==1||($8>5&&$10<0.01){print $0}' out/quant.gene.maf05.skat.epacts |wc # number pass the filter 0.05 and p 
+awk 'NR==1||($8>5&&$10<0.01){print $0}' out/quant.gene.maf05.skat.epacts     #what variants 
+
+
+
+#############Q6 
+# number of variants >=2 and frac_with_rare>=0.005
+##the same, but this time limit to potentially functional snps with maximum maf 0.01
+
+
+epacts group --vcf "/projectnb/bs859/data/rarevariant/1000G_exome_chr20_example_softFiltered.calls.anno.vcf.gz"\
+  --groupf nonsyn  --out out/quant.gene.maf01.skat \
+  --ped $DATADIR/homework.ped --max-maf 0.01 \
+  --pheno QPHENO --cov pop.EU pop.AF pop.HI --test skat --skat-o --run 10
+awk 'NR==1||($6>=0.005&&$8>=2){print $0}' out/quant.gene.maf01.skat.epacts
+awk 'NR==1||($6>=0.005&&$8>=2){print $0}' out/quant.gene.maf01.skat.epacts |wc
+
+awk 'NR==1||($10<0.01){print $0}' out/quant.gene.maf01.skat.epacts
+
+awk 'NR==1||($10<0.01){print $0}' out/quant.gene.maf01.skat.epacts |wc
+
+#number of tests with MAC>1 and non-NA p-value: #number of tests performed
+awk 'NR==1||($8>1&&$10!="NA"){print $0}' out/quant.gene.maf01.skat.epacts |wc
+
+#0.0001
+awk 'NR==1||($10<0.0001){print $0}' out/quant.gene.maf01.skat.epacts #none
+
+ 
