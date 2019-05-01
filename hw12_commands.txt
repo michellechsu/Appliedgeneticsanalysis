@@ -1,0 +1,213 @@
+IGAP='/projectnb/bs859/data/igap'
+LDSCORES_DIR='/projectnb/bs859/data/ldscore_files'
+module load R
+module load python
+module load ldsc
+
+
+ls $IGAP
+head $IGAP/IGAP_stage_1.txt
+
+
+##basic model
+
+##step 1:  format summary statistics, include only variants in the hapmap phase 3 snplist:
+munge_sumstats.py \
+--sumstats $IGAP/IGAP_stage_1.txt \
+--snp MarkerName \
+--N-cas 17008 \
+--N-con 37154 \
+--a1 Effect_allele \
+--a2 Non_Effect_allele \
+--signed-sumstats Beta,0 \
+--out AD1 \
+--merge-alleles $LDSCORES_DIR/w_hm3.snplist
+
+
+###on the original (rather than liability) scale:
+ldsc.py \
+--h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--w-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--out AD1_h2_orig_scale
+
+## assume prevalence is 0.10
+ldsc.py \
+--h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--w-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD1_h2_prev.1
+
+## assume prevalence is 0.05
+ldsc.py \
+--h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--w-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--pop-prev 0.05 \
+--samp-prev 0.314 \
+--out AD1_h2_prev.05
+
+## assume prevalence is 0.15
+ldsc.py \
+--h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--w-ld-chr $LDSCORES_DIR/eur_w_ld_chr/ \
+--pop-prev 0.15 \
+--samp-prev 0.314 \
+--out AD1_h2_prev.15
+
+
+
+#####partitioned:
+###
+###baseline ld score and weight files:
+ls  $LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.*
+ls  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC.*
+
+###compute heritability for each of the 53 categories:
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR//1000G_EUR_Phase3_baseline/baseline. \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD1_h2_partitioned
+
+
+## alternatively, we can look at h2 for different types of cells.
+##cell type groups are in the directory
+## $LDSCORES_DIR/1000G_Phase3_cell_type_groups
+##file "names" describes the groups:
+cat $LDSCORES_DIR/1000G_Phase3_cell_type_groups/names
+
+##cell type groups: 
+
+##adre
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.1.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_Adren \
+--print-coefficients
+
+##cv
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.2.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_CVD \
+--print-coefficients
+
+##cns
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.3.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_CNS \
+--print-coefficients
+
+##connect
+
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.4.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_connect \
+--print-coefficients
+
+##GI
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.5.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_GI \
+--print-coefficients
+
+
+##hemo
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.6.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_hemo \
+--print-coefficients
+
+##kidney
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.7.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_KIDNEY \
+--print-coefficients
+
+##Liver
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.8.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_Liver \
+--print-coefficients
+
+##Other
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.9.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_Other \
+--print-coefficients
+
+##ske
+ldsc.py \
+ --h2 AD1.sumstats.gz \
+--ref-ld-chr $LDSCORES_DIR/1000G_Phase3_cell_type_groups/cell_type_group.10.,$LDSCORES_DIR/1000G_EUR_Phase3_baseline/baseline.  \
+--w-ld-chr  $LDSCORES_DIR/1000G_Phase3_weights_hm3_no_MHC/weights.hm3_noMHC. \
+--overlap-annot \
+--frqfile-chr $LDSCORES_DIR/1000G_Phase3_frq/1000G.EUR.QC. \
+--pop-prev 0.10 \
+--samp-prev 0.314 \
+--out AD2_Ske \
+--print-coefficients
+
+
+#In R : read in data: Adrenal<-read.table("C:/Users/Michelle Hsu/Documents/2019bs859/class12/AD2_Adren.results", header = T, as.is = F)
+#See R script
