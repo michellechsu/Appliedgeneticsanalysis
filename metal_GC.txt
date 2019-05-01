@@ -1,0 +1,73 @@
+# Meta-analysis weighted by standard error does not work well
+# when different studies used very different transformations
+# If we wanted to use inverse variance weights, we would un-comment
+# the next line:
+# SCHEME   STDERR
+
+# Not sure if genomic control is a good idea, given the large
+# number of true associations in these three regions.  If we were doing
+# a GWAS, and wanted to estimate genomic control lambda from the analysis,
+# and then adjust each study by its genomic control lambda, 
+# we would uncomment this line:
+# GENOMICCONTROL ON
+# Note in this example, we instead set the genomic control lambda for each 
+# study (based on the published GWAS), rather than estimating it from our
+# data.  These data are not genome-wide, so we can't estimate the lambda
+# from the test statistics 
+
+# To help identify allele flips, it can be useful to track
+# allele frequencies in the meta-analysis.  To do that, we can
+# uncomment the next two lines:
+# AVERAGEFREQ ON
+# MINMAXFREQ ON
+
+#DGI_three_regions_uniform.txt 1.019
+#FHS_three_regions_uniform.csv  1.029
+#MAGIC_FUSION_Results_uniform.txt  1.054
+#magic_SARDINIA_uniform.tbl 1.014
+
+MARKER   SNP
+WEIGHT   N
+ALLELE   EFFECT_ALLELE NON_EFFECT_ALLELE
+FREQ     EFFECT_ALLELE_FREQ
+EFFECT   BETA
+STDERR   SE
+PVAL     P_VAL
+GENOMICCONTROL 1.019
+PROCESS /projectnb/bs859/data/meta/harmonized/DGI_three_regions_uniform.txt
+
+SEPARATOR  COMMA
+MARKER   SNP
+WEIGHT   N
+ALLELE   EFFECT_ALLELE NON_EFFECT_ALLELE
+FREQ     EFFECT_ALLELE_FREQ
+EFFECT   BETA
+STDERR   SE
+PVAL     P_VAL
+GENOMICCONTROL 1.029
+PROCESS /projectnb/bs859/data/meta/harmonized/FHS_three_regions_uniform.csv
+
+SEPARATOR  WHITESPACE
+MARKER   SNP
+ALLELE   EFFECT_ALLELE NON_EFFECT_ALLELE
+FREQ     FREQ_EFFECT
+WEIGHT   N
+EFFECT   BETA
+STDERR   SE
+PVAL     PVALUE
+GENOMICCONTROL 1.054
+PROCESS /projectnb/bs859/data/meta/harmonized/MAGIC_FUSION_Results_uniform.txt
+
+SEPARATOR  TAB
+MARKER   SNP
+DEFAULTWEIGHT  2361
+ALLELE   AL1 AL2
+FREQ     FREQ1
+EFFECT   EFFECT
+STDERR   SE
+PVAL     PVALUE
+GENOMICCONTROL 1.014
+PROCESS /projectnb/bs859/data/meta/harmonized/magic_SARDINIA_uniform.tbl
+OUTFILE METAANALYSIS_GC_ .tbl
+ANALYZE
+

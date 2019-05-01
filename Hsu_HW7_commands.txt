@@ -1,0 +1,26 @@
+#DATADIR=/projectnb/bs859/data/meta/METAL_example
+DATADIR=/projectnb/bs859/data/meta/harmonized
+ls $DATADIR
+
+head $DATADIR/DGI_three_regions_uniform.txt
+head $DATADIR/FHS_three_regions_uniform.csv
+head $DATADIR/MAGIC_FUSION_Results_uniform.txt
+head $DATADIR/magic_SARDINIA_uniform.tbl
+
+wc $DATADIR/magic_SARDINIA_uniform.tbl #2362-1 = 2361
+
+more metal.txt
+module load metal
+
+metal metal_GC.txt > metal.log
+cat metal.log
+cat METAANALYSIS1.TBL.info
+cat "/projectnb/bs859/spr19/users/mchsu/class7/METAANALYSIS1.TBL"
+head $DATADIR/DGI_three_regions_uniform.txt #with region info
+
+metal metal_GC_inv.txt > metal2.log
+cat metal2.log
+cat "/projectnb/bs859/spr19/users/mchsu/class7/METAANALYSIS_GC_inv1.tbl"
+
+
+
