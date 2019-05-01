@@ -1,0 +1,41 @@
+module load R
+module load gcc/7.2.0
+module load prsice
+
+Rscript $SCC_PRSICE_BIN/PRSice.R --dir . \
+    --prsice $SCC_PRSICE_BIN/PRSice \
+    --base /projectnb/bs859/data/igap/IGAP_stage_1.txt  \
+    --target /projectnb/bs859/data/tgen/cleaned/TGEN_cleaned  \
+    --stat Beta \
+    --se SE \
+    --snp MarkerName \
+    --A1 Effect_allele \
+    --A2 Non_Effect_allele \
+    --pvalue Pvalue \
+    --binary-target T \
+    --cov-file /projectnb/bs859/data/tgen/cleaned/TGEN_pcs.txt \
+    --cov-col PC2,PC6,PC8 \
+    --clump-r2 0.2\
+   --out IGAP_base_TGEN_target
+
+#    --quantile 5 \
+#    --quant-ref 1 \
+
+
+
+
+Rscript $SCC_PRSICE_BIN/PRSice.R --dir . \
+    --prsice $SCC_PRSICE_BIN/PRSice \
+    --base /projectnb/bs859/data/hippo/Meta_Whole_hippocampus.txt  \
+    --target /projectnb/bs859/data/tgen/cleaned/TGEN_cleaned  \
+    --stat Z \
+    --beta \
+    --snp SNP \
+    --A1 A1 \
+    --A2 A2 \
+    --pvalue P \
+    --cov-file /projectnb/bs859/data/tgen/cleaned/TGEN_pcs.txt \
+    --cov-col PC2,PC6,PC8 \
+    --binary-target T \
+     --out cogfunc_base_TGEN_target
+
