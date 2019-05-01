@@ -1,0 +1,81 @@
+
+module load gcta/1.92.1beta5
+
+
+#####Q1#########
+##reformat the files to the specifications of GCTA:
+##format needed:  SNP A1  A2  freq    b   se  p   N
+
+#RISK FACTOR - EARLY ONSET OF MENOPAUSE
+head /projectnb/bs859/data/repro/Menopause_HapMap_for_website_18112015.txt
+cat /projectnb/bs859/data/repro/Menopause_HapMap_for_website_18112015.txt | awk 'NR==1{print "SNP A1 A2 freq b se p N"};NR>1{print $1,$2,$3,$4,$5,$6,$7,"70000" }'  >women_gctaformat.txt
+head women_gctaformat.txt
+
+#OUTOME - 2015 CAD
+ zcat /projectnb/bs859/data/cardiogram/cad.additive.Oct2015.pub.zip |head -n 1
+##reformat to fit GCTA needs:
+zcat /projectnb/bs859/data/cardiogram/cad.additive.Oct2015.pub.zip | awk 'NR==1{print "SNP A1 A2 freq b se p N"};NR>1{print $1,$4,$5,$6,$9,$10,$11,"185000" }'  >cad_gctaformat.txt
+head cad_gctaformat.txt
+
+#GSMR TEST 
+gcta64 --gsmr-file exposure.txt outcome.txt  --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_EUR_filtered --gsmr-direction 0 --out women-CAD-gsmr  --effect-plot 
+
+#SNPs
+cat "/projectnb/bs859/spr19/users/mchsu/class11/women-CAD-gsmr.log"
+
+cat "/projectnb/bs859/spr19/users/mchsu/class11/women-CAD-gsmr.gsmr"
+
+#PLOT
+R --vanilla <plot_EARLY_CAD.R>plot_EARLY_CAD.log
+
+########END OF Q1#########
+
+#######Q2##########
+# /projectnb/bs859/data/bmi/Bmi.giant-ukbb.meta-analysis.combined.23May2018.HapMap2_only.txt.gz
+
+#RISK FACTOR HIGH BMI
+zcat /projectnb/bs859/data/bmi/Bmi.giant-ukbb.meta-analysis.combined.23May2018.HapMap2_only.txt.gz | head -n 1
+
+zcat /projectnb/bs859/data/bmi/Bmi.giant-ukbb.meta-analysis.combined.23May2018.HapMap2_only.txt.gz | awk 'NR==1{print "SNP A1 A2 freq b se p N"};NR>1{print $3,$4,$5,$6,$7,$8,$9, $10 }'  >bmi_gctaformat.txt
+head bmi_gctaformat.txt
+
+#OUTOME - 2015 CAD
+ zcat /projectnb/bs859/data/cardiogram/cad.additive.Oct2015.pub.zip |head -n 1
+##reformat to fit GCTA needs:
+zcat /projectnb/bs859/data/cardiogram/cad.additive.Oct2015.pub.zip | awk 'NR==1{print "SNP A1 A2 freq b se p N"};NR>1{print $1,$4,$5,$6,$9,$10,$11,"185000" }'  >cad_gctaformat.txt
+head cad_gctaformat.txt
+
+#GSMR TEST 
+gcta64 --gsmr-file exposure2.txt outcome.txt  --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_EUR_filtered --gsmr-direction 0 --out bmi-CAD-gsmr  --effect-plot 
+
+#SNPs
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi-CAD-gsmr.log"
+
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi-CAD-gsmr.gsmr"
+
+#PLOT
+R --vanilla <plot_HIGHBMI_CAD.R>plot_HIGHBMI_CAD.log
+
+
+##############################
+#    GSMR TEST 2 (threshold) #
+##############################
+gcta64 --gsmr-file exposure2.txt outcome.txt  --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_EUR_filtered --gsmr-direction 0 --gwas-thresh 0.0000000001 --out bmi2-CAD-gsmr  --effect-plot 
+
+#SNPs2 
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi2-CAD-gsmr.log"
+
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi2-CAD-gsmr.gsmr"
+
+#######################################
+#  GSMR 3 (threshold and direction)   #
+#######################################
+gcta64 --gsmr-file exposure2.txt outcome.txt  --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_EUR_filtered --gsmr-direction 1 --gwas-thresh 0.0000000001 --out bmi3-CAD-gsmr  --effect-plot 
+
+#SNPs3 
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi3-CAD-gsmr.log"
+
+cat "/projectnb/bs859/spr19/users/mchsu/class11/bmi3-CAD-gsmr.gsmr"
+
+###########END OF 2################
+
