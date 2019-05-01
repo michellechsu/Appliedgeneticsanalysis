@@ -1,0 +1,50 @@
+#/projectnb/bs859/data/meta/downloads/UKB.v2.albuminuria.n382500.zip 
+
+DATA2='/projectnb/bs859/data/meta/downloads'
+cat $DATA2/UKB.v2.albuminuria.n382500.README.txt
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|head #since too many only head 
+
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|wc
+
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|awk 'NR==1||$10<1e-8 {print $0}'  >tophits.txt 
+wc tophits.txt
+
+grep rs2601006 /projectnb/bs859/spr19/users/mchsu/class8/tophits.txt
+#12:69979517_C_T rs2601006       12      69979517        T       C       0.34288 -0.011756       0.0017554       2.12953e-11     382500
+
+
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|awk 'NR==1||($3==12&&$4 > 69979517-1000000&&$4<69979517+1000000){print $0}' > toLocusZoom.txt  
+
+wc toLocusZoom.txt
+head toLocusZoom.txt #WANT TO UPLOAD THIS
+#whitespace (cover tab)
+
+###create reformatted file for GCTA conditional analysis:
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|awk '{print $2,$5,$6,$7,$8,$9,$10,$11}' > togcta.txt #in the directory (11 millipon)
+
+##load gcta module
+module load gcta
+##conditional analysis, using 1000G CEU europeans as the reference group from 
+##which LD is estimated
+
+gcta --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_chr.12.EUR --cojo-file togcta.txt  --cojo-slct --chr 12 --out chr12
+
+
+gcta --bfile /projectnb/bs859/data/1000G/EUR_plinkfiles/1000G_chr.12.EUR --cojo-file togcta.txt  --cojo-slct --chr 12 --maf 0.01 --out chr12.maf01
+head chr12.maf01.jma.cojo
+
+
+
+#recreate my tophits
+zcat $DATA2/UKB.v2.albuminuria.n382500.zip|awk 'NR==1||$10<5e-11 {print $0}'  >tophits.txt
+wc tophits.txt
+
+cut -f2 tophits.txt > toVEP.txt  
+#especially in tab limited format - cut will take specific columns and put into antoehr file.
+#$ cut -d, -f2
+#or second an d the fith f2,5
+
+
+
+
+
